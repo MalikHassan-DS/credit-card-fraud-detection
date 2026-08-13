@@ -258,7 +258,7 @@ st.set_page_config(
 
 BASE_DIR = Path(__file__).resolve().parent
 MODEL_DIR = BASE_DIR
-DATASET_PATH = BASE_DIR / "creditcard.csv"
+
 
 # ============================================================
 # FEATURES
@@ -293,22 +293,8 @@ def load_model():
 
 model, threshold = load_model()
 
-# ============================================================
-# LOAD DATASET
-# ============================================================
-
-@st.cache_data
-def load_dataset():
-
-    if not DATASET_PATH.exists():
-        return None
-
-    df = pd.read_csv(DATASET_PATH)
-
-    return df
 
 
-df = load_dataset()
 
 # ============================================================
 # HEADER
@@ -329,14 +315,6 @@ st.divider()
 # CHECK DATASET
 # ============================================================
 
-if df is None:
-
-    st.error(
-        "❌ creditcard.csv not found. "
-        "Please place creditcard.csv in the same folder as app.py."
-    )
-
-    st.stop()
 
 # Check required columns
 
