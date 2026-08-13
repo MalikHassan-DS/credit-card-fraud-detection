@@ -355,55 +355,7 @@ if "actual_label" not in st.session_state:
     st.session_state.actual_label = None
 
 # ============================================================
-# TRANSACTION LOADER
-# ============================================================
 
-st.subheader("📂 Test Actual Dataset Transaction")
-
-st.info(
-    "Instead of manually entering 0.000000 values, "
-    "load an actual transaction directly from creditcard.csv."
-)
-
-col1, col2 = st.columns(2)
-
-with col1:
-
-    if st.button(
-        "🟢 Load Normal Transaction",
-        use_container_width=True
-    ):
-
-        normal_rows = df[df["Class"] == 0]
-
-        selected = normal_rows.sample(
-            n=1,
-            random_state=None
-        ).iloc[0]
-
-        st.session_state.selected_transaction = selected
-        st.session_state.actual_label = 0
-
-        st.rerun()
-
-with col2:
-
-    if st.button(
-        "🔴 Load Fraud Transaction",
-        use_container_width=True
-    ):
-
-        fraud_rows = df[df["Class"] == 1]
-
-        selected = fraud_rows.sample(
-            n=1,
-            random_state=None
-        ).iloc[0]
-
-        st.session_state.selected_transaction = selected
-        st.session_state.actual_label = 1
-
-        st.rerun()
 
 # ============================================================
 # INPUT SECTION
