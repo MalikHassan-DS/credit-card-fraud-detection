@@ -429,7 +429,7 @@ if selected_transaction is not None:
 
             input_data[feature] = st.number_input(
                 feature,
-                value=float(selected_transaction[feature]),
+                value=0.0,
                 format="%.6f",
                 key=f"{feature}_input"
             )
@@ -446,24 +446,16 @@ if selected_transaction is not None:
 
             input_data[feature] = st.number_input(
                 feature,
-                value=float(selected_transaction[feature]),
+                value=0.0,
                 format="%.6f",
                 key=f"{feature}_input"
             )
 
-else:
 
-    st.warning(
-        "⚠️ Please click "
-        "**Load Normal Transaction** or "
-        "**Load Fraud Transaction** first."
-    )
 
 # ============================================================
 # PREDICTION
 # ============================================================
-
-if selected_transaction is not None:
 
     st.divider()
 
