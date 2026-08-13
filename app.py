@@ -257,7 +257,7 @@ st.set_page_config(
 # ============================================================
 
 BASE_DIR = Path(__file__).resolve().parent
-MODEL_DIR = BASE_DIR / "models"
+MODEL_DIR = BASE_DIR
 DATASET_PATH = BASE_DIR / "creditcard.csv"
 
 # ============================================================
