@@ -689,33 +689,3 @@ if selected_transaction is not None:
                 f"({threshold:.4f})."
             )
 
-# ============================================================
-# DATASET SUMMARY
-# ============================================================
-
-st.divider()
-
-st.subheader("📈 Dataset Summary")
-
-summary_col1, summary_col2, summary_col3 = st.columns(3)
-
-with summary_col1:
-
-    st.metric(
-        "Total Transactions",
-        f"{len(df):,}"
-    )
-
-with summary_col2:
-
-    st.metric(
-        "Normal",
-        f"{normal_count:,}"
-    )
-
-with summary_col3:
-
-    st.metric(
-        "Fraud",
-        f"{fraud_count:,}"
-    )
