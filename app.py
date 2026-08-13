@@ -322,8 +322,11 @@ st.divider()
 # ============================================================
 # MODEL INFORMATION
 # ============================================================
+# ============================================================
+# MODEL INFORMATION
+# ============================================================
 
-col1, col2, col3, col4 = st.columns(4)
+col1, col2 = st.columns(2)
 
 with col1:
     st.metric(
@@ -337,19 +340,9 @@ with col2:
         f"{threshold:.4f}"
     )
 
-with col3:
-    st.metric(
-        "Normal Transactions",
-        f"{normal_count:,}"
-    )
-
-with col4:
-    st.metric(
-        "Fraud Transactions",
-        f"{fraud_count:,}"
-    )
-
 st.divider()
+
+
 
 # ============================================================
 # SESSION STATE
