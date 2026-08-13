@@ -316,22 +316,7 @@ st.divider()
 # ============================================================
 
 
-# Check required columns
 
-required_columns = FEATURES + ["Class"]
-
-missing_columns = [
-    col for col in required_columns
-    if col not in df.columns
-]
-
-if missing_columns:
-
-    st.error(
-        f"❌ Missing columns in dataset: {missing_columns}"
-    )
-
-    st.stop()
 
 # ============================================================
 # DATASET INFORMATION
