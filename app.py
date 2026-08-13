@@ -233,10 +233,6 @@
 
 
 
-
-
-
-
 import streamlit as st
 import pandas as pd
 import joblib
@@ -259,6 +255,7 @@ st.set_page_config(
 BASE_DIR = Path(__file__).resolve().parent
 MODEL_DIR = BASE_DIR
 
+DATASET_PATH = BASE_DIR / "creditcard.csv"
 
 # ============================================================
 # FEATURES
@@ -293,8 +290,22 @@ def load_model():
 
 model, threshold = load_model()
 
+# ============================================================
+# LOAD DATASET
+# ============================================================
+
+@st.cache_data
+def load_dataset():
+
+    if not DATASET_PATH.exists():
+        return None
+
+    df = pd.read_csv(DATASET_PATH)
+
+    return df
 
 
+df = load_dataset()
 
 # ============================================================
 # HEADER
@@ -315,34 +326,76 @@ st.divider()
 # CHECK DATASET
 # ============================================================
 
+if df is None:
 
+    st.error(
+        "❌ creditcard.csv was not found."
+    )
 
+    st.info(
+        "Please place creditcard.csv in the same folder as app.py."
+    )
 
+    st.stop()
+
+# ============================================================
+# DATASET VALIDATION
+# ============================================================
+
+required_columns = FEATURES + ["Class"]
+
+missing_columns = [
+    col for col in required_columns
+    if col not in df.columns
+]
+
+if missing_columns:
+
+    st.error(
+        "❌ Required columns are missing from the dataset:"
+    )
+
+    st.write(missing_columns)
+
+    st.stop()
+
+# ============================================================
+# DATASET INFORMATION
+# ============================================================
+
+st.success(
+    f"✅ Dataset loaded successfully — "
+    f"{len(df):,} transactions available."
+)
 
 # ============================================================
 # MODEL INFORMATION
 # ============================================================
-# ============================================================
-# MODEL INFORMATION
-# ============================================================
 
-col1, col2 = st.columns(2)
+col1, col2, col3 = st.columns(3)
 
 with col1:
+
     st.metric(
         "Model",
         "Random Forest"
     )
 
 with col2:
+
     st.metric(
         "Decision Threshold",
         f"{threshold:.4f}"
     )
 
+with col3:
+
+    st.metric(
+        "Total Transactions",
+        f"{len(df):,}"
+    )
+
 st.divider()
-
-
 
 # ============================================================
 # SESSION STATE
@@ -354,8 +407,48 @@ if "selected_transaction" not in st.session_state:
 if "actual_label" not in st.session_state:
     st.session_state.actual_label = None
 
+if "selected_index" not in st.session_state:
+    st.session_state.selected_index = None
+
+# ============================================================
+# TRANSACTION SELECTOR
 # ============================================================
 
+st.subheader("🔎 Select Transaction")
+
+st.markdown(
+    "Select a transaction from the dataset to load its actual values."
+)
+
+# ------------------------------------------------------------
+# Transaction ID selector
+# ------------------------------------------------------------
+
+transaction_index = st.selectbox(
+    "Transaction Number",
+    options=range(len(df)),
+    format_func=lambda x: f"Transaction #{x + 1}",
+    key="transaction_selector"
+)
+
+# ------------------------------------------------------------
+# Load selected transaction
+# ------------------------------------------------------------
+
+if st.button(
+    "📥 Load Transaction",
+    use_container_width=True
+):
+
+    selected_row = df.iloc[transaction_index]
+
+    st.session_state.selected_transaction = selected_row
+    st.session_state.actual_label = int(
+        selected_row["Class"]
+    )
+    st.session_state.selected_index = transaction_index
+
+    st.rerun()
 
 # ============================================================
 # INPUT SECTION
@@ -380,19 +473,31 @@ input_data = {}
 if selected_transaction is not None:
 
     st.success(
-        "✅ Actual transaction loaded from creditcard.csv"
+        f"✅ Actual transaction loaded from creditcard.csv "
+        f"(Transaction #{st.session_state.selected_index + 1})"
     )
 
-    actual_label = int(st.session_state.actual_label)
+    actual_label = int(
+        st.session_state.actual_label
+    )
 
     if actual_label == 0:
-        st.info("Actual Label: NORMAL (0)")
-    else:
-        st.warning("Actual Label: FRAUD (1)")
 
-    # --------------------------------------------------------
-    # Time and Amount
-    # --------------------------------------------------------
+        st.info(
+            "Actual Label: 🟢 NORMAL (0)"
+        )
+
+    else:
+
+        st.warning(
+            "Actual Label: 🔴 FRAUD (1)"
+        )
+
+    # ========================================================
+    # TIME AND AMOUNT
+    # ========================================================
+
+    st.subheader("Transaction Information")
 
     col1, col2 = st.columns(2)
 
@@ -400,7 +505,9 @@ if selected_transaction is not None:
 
         input_data["Time"] = st.number_input(
             "Time",
-            value=float(selected_transaction["Time"]),
+            value=float(
+                selected_transaction["Time"]
+            ),
             format="%.6f",
             key="time_input"
         )
@@ -410,10 +517,16 @@ if selected_transaction is not None:
         input_data["Amount"] = st.number_input(
             "Transaction Amount",
             min_value=0.0,
-            value=float(selected_transaction["Amount"]),
+            value=float(
+                selected_transaction["Amount"]
+            ),
             format="%.6f",
             key="amount_input"
         )
+
+    # ========================================================
+    # TRANSACTION FEATURES
+    # ========================================================
 
     st.subheader("Transaction Features")
 
@@ -429,7 +542,9 @@ if selected_transaction is not None:
 
             input_data[feature] = st.number_input(
                 feature,
-                value=0.0,
+                value=float(
+                    selected_transaction[feature]
+                ),
                 format="%.6f",
                 key=f"{feature}_input"
             )
@@ -446,16 +561,31 @@ if selected_transaction is not None:
 
             input_data[feature] = st.number_input(
                 feature,
-                value=0.0,
+                value=float(
+                    selected_transaction[feature]
+                ),
                 format="%.6f",
                 key=f"{feature}_input"
             )
 
+    # ========================================================
+    # SHOW RAW TRANSACTION
+    # ========================================================
 
+    with st.expander("📄 View Complete Transaction Data"):
 
-# ============================================================
-# PREDICTION
-# ============================================================
+        transaction_preview = pd.DataFrame(
+            [selected_transaction[FEATURES].to_dict()]
+        )
+
+        st.dataframe(
+            transaction_preview,
+            use_container_width=True
+        )
+
+    # ========================================================
+    # PREDICTION
+    # ========================================================
 
     st.divider()
 
@@ -463,6 +593,10 @@ if selected_transaction is not None:
         "🔍 Analyze Transaction",
         use_container_width=True
     ):
+
+        # ----------------------------------------------------
+        # Create transaction DataFrame
+        # ----------------------------------------------------
 
         transaction = pd.DataFrame(
             [input_data],
@@ -477,17 +611,26 @@ if selected_transaction is not None:
             transaction
         )[0]
 
-        # Safely find probability for class 1
+        # ----------------------------------------------------
+        # Safely find probability for Class 1
+        # ----------------------------------------------------
+
         if hasattr(model, "classes_"):
 
-            classes = list(model.classes_)
+            classes = list(
+                model.classes_
+            )
 
             if 1 in classes:
+
                 fraud_index = classes.index(1)
+
                 fraud_probability = float(
                     probabilities[fraud_index]
                 )
+
             else:
+
                 fraud_probability = 0.0
 
         else:
@@ -544,8 +687,18 @@ if selected_transaction is not None:
                     "✅ Predicted: NORMAL"
                 )
 
+        # ----------------------------------------------------
+        # Probability Progress Bar
+        # ----------------------------------------------------
+
         st.progress(
-            min(max(fraud_probability, 0.0), 1.0)
+            min(
+                max(
+                    fraud_probability,
+                    0.0
+                ),
+                1.0
+            )
         )
 
         # ====================================================
@@ -626,3 +779,13 @@ if selected_transaction is not None:
                 f"({threshold:.4f})."
             )
 
+# ============================================================
+# NO TRANSACTION SELECTED
+# ============================================================
+
+else:
+
+    st.info(
+        "👆 Select a transaction above and click "
+        "**Load Transaction** to view its actual values."
+    )
