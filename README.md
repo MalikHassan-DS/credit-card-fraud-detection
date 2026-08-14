@@ -8,6 +8,12 @@ Credit card fraud detection is a highly imbalanced classification problem becaus
 
 This project explores multiple machine learning approaches, handles class imbalance, evaluates models using appropriate classification metrics, tunes the classification threshold, and deploys the final Random Forest model through a Streamlit application.
 
+# Live Demo
+
+Try the deployed Streamlit application:
+
+[🚀 Open Credit Card Fraud Detection App](https://credit-card-fraud-detection-8rysmugbp6iuwagtjkw4wp.streamlit.app/)
+
 # Objectives
 
 * Prepare and clean the transaction dataset
