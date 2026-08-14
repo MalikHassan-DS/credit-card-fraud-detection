@@ -233,11 +233,16 @@
 
 
 
-```python
+
+
+
+
+
 import streamlit as st
 import pandas as pd
 import joblib
 from pathlib import Path
+
 
 # ============================================================
 # PAGE CONFIGURATION
@@ -249,6 +254,7 @@ st.set_page_config(
     layout="wide"
 )
 
+
 # ============================================================
 # PATHS
 # ============================================================
@@ -257,17 +263,44 @@ BASE_DIR = Path(__file__).resolve().parent
 MODEL_DIR = BASE_DIR
 DATASET_PATH = BASE_DIR / "test_transactions.csv"
 
+
 # ============================================================
 # FEATURES
 # ============================================================
 
 FEATURES = [
     "Time",
-    "V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8", "V9", "V10",
-    "V11", "V12", "V13", "V14", "V15", "V16", "V17", "V18", "V19", "V20",
-    "V21", "V22", "V23", "V24", "V25", "V26", "V27", "V28",
+    "V1",
+    "V2",
+    "V3",
+    "V4",
+    "V5",
+    "V6",
+    "V7",
+    "V8",
+    "V9",
+    "V10",
+    "V11",
+    "V12",
+    "V13",
+    "V14",
+    "V15",
+    "V16",
+    "V17",
+    "V18",
+    "V19",
+    "V20",
+    "V21",
+    "V22",
+    "V23",
+    "V24",
+    "V25",
+    "V26",
+    "V27",
+    "V28",
     "Amount"
 ]
+
 
 # ============================================================
 # LOAD MODEL
@@ -275,14 +308,11 @@ FEATURES = [
 
 @st.cache_resource
 def load_model():
+    model_path = MODEL_DIR / "fraud_detection_random_forest.pkl"
+    threshold_path = MODEL_DIR / "threshold.pkl"
 
-    model = joblib.load(
-        MODEL_DIR / "fraud_detection_random_forest.pkl"
-    )
-
-    threshold = joblib.load(
-        MODEL_DIR / "threshold.pkl"
-    )
+    model = joblib.load(model_path)
+    threshold = joblib.load(threshold_path)
 
     return model, threshold
 
@@ -293,17 +323,14 @@ def load_model():
 
 @st.cache_data
 def load_test_transactions():
-
     if not DATASET_PATH.exists():
         return None
 
-    df = pd.read_csv(DATASET_PATH)
-
-    return df
+    return pd.read_csv(DATASET_PATH)
 
 
 # ============================================================
-# LOAD MODEL + DATA
+# LOAD MODEL AND DATASET
 # ============================================================
 
 model, threshold = load_model()
@@ -329,12 +356,10 @@ st.divider()
 # ============================================================
 
 if df is None:
-
     st.error(
         "❌ test_transactions.csv was not found. "
-        "Please place it in the same folder as app.py."
+        "Please place test_transactions.csv in the same folder as app.py."
     )
-
     st.stop()
 
 
@@ -345,17 +370,15 @@ if df is None:
 required_columns = FEATURES + ["Class"]
 
 missing_columns = [
-    col for col in required_columns
-    if col not in df.columns
+    column for column in required_columns
+    if column not in df.columns
 ]
 
 if missing_columns:
-
     st.error(
         f"❌ Missing columns in test_transactions.csv: "
         f"{missing_columns}"
     )
-
     st.stop()
 
 
@@ -366,21 +389,18 @@ if missing_columns:
 col1, col2, col3 = st.columns(3)
 
 with col1:
-
     st.metric(
         "Model",
         "Random Forest"
     )
 
 with col2:
-
     st.metric(
         "Decision Threshold",
         f"{threshold:.4f}"
     )
 
 with col3:
-
     st.metric(
         "Test Transactions",
         f"{len(df):,}"
@@ -394,17 +414,12 @@ st.divider()
 # ============================================================
 
 if "selected_transaction" not in st.session_state:
-
     st.session_state.selected_transaction = None
 
-
 if "actual_label" not in st.session_state:
-
     st.session_state.actual_label = None
 
-
 if "selected_index" not in st.session_state:
-
     st.session_state.selected_index = None
 
 
@@ -415,73 +430,65 @@ if "selected_index" not in st.session_state:
 st.subheader("📂 Test Dataset Transaction")
 
 st.info(
-    "Load a real test transaction stored in the project test dataset. "
-    "You do not need to enter V1–V28 manually."
+    "Load a real transaction from test_transactions.csv. "
+    "You do not need to manually enter V1–V28."
 )
 
 col1, col2 = st.columns(2)
 
 
-# ------------------------------------------------------------
+# ============================================================
 # LOAD NORMAL TRANSACTION
-# ------------------------------------------------------------
+# ============================================================
 
 with col1:
-
     if st.button(
         "🟢 Load Normal Transaction",
         use_container_width=True
     ):
+        normal_rows = df[df["Class"] == 0]
 
-        rows = df[df["Class"] == 0]
-
-        if rows.empty:
-
+        if normal_rows.empty:
             st.error(
                 "❌ No normal transaction found in test_transactions.csv."
             )
-
         else:
+            selected = normal_rows.sample(
+                n=1,
+                random_state=None
+            ).iloc[0]
 
-            idx = rows.index[0]
-
-            st.session_state.selected_transaction = df.loc[idx]
-
+            st.session_state.selected_transaction = selected
             st.session_state.actual_label = 0
-
-            st.session_state.selected_index = int(idx)
+            st.session_state.selected_index = selected.name
 
             st.rerun()
 
 
-# ------------------------------------------------------------
+# ============================================================
 # LOAD FRAUD TRANSACTION
-# ------------------------------------------------------------
+# ============================================================
 
 with col2:
-
     if st.button(
         "🔴 Load Fraud Transaction",
         use_container_width=True
     ):
+        fraud_rows = df[df["Class"] == 1]
 
-        rows = df[df["Class"] == 1]
-
-        if rows.empty:
-
+        if fraud_rows.empty:
             st.error(
                 "❌ No fraud transaction found in test_transactions.csv."
             )
-
         else:
+            selected = fraud_rows.sample(
+                n=1,
+                random_state=None
+            ).iloc[0]
 
-            idx = rows.index[0]
-
-            st.session_state.selected_transaction = df.loc[idx]
-
+            st.session_state.selected_transaction = selected
             st.session_state.actual_label = 1
-
-            st.session_state.selected_index = int(idx)
+            st.session_state.selected_index = selected.name
 
             st.rerun()
 
@@ -494,23 +501,19 @@ st.divider()
 
 st.subheader("💳 Transaction Details")
 
-selected_transaction = (
-    st.session_state.selected_transaction
-)
+selected_transaction = st.session_state.selected_transaction
 
 
-# ------------------------------------------------------------
+# ============================================================
 # NO TRANSACTION SELECTED
-# ------------------------------------------------------------
+# ============================================================
 
 if selected_transaction is None:
-
     st.info(
         "Choose **Load Normal Transaction** or "
-        "**Load Fraud Transaction** to fill the "
-        "transaction values automatically."
+        "**Load Fraud Transaction** to automatically "
+        "fill the transaction values."
     )
-
     st.stop()
 
 
@@ -518,21 +521,12 @@ if selected_transaction is None:
 # ACTUAL LABEL
 # ============================================================
 
-actual_label = int(
-    st.session_state.actual_label
-)
+actual_label = int(st.session_state.actual_label)
 
 if actual_label == 0:
-
-    st.success(
-        "Actual Label: 🟢 NORMAL (0)"
-    )
-
+    st.success("Actual Label: 🟢 NORMAL (0)")
 else:
-
-    st.warning(
-        "Actual Label: 🔴 FRAUD (1)"
-    )
+    st.warning("Actual Label: 🔴 FRAUD (1)")
 
 
 # ============================================================
@@ -550,27 +544,19 @@ st.subheader("Transaction Information")
 
 col1, col2 = st.columns(2)
 
-
 with col1:
-
     input_data["Time"] = st.number_input(
         "Time",
-        value=float(
-            selected_transaction["Time"]
-        ),
+        value=float(selected_transaction["Time"]),
         format="%.6f",
         key="time_input"
     )
 
-
 with col2:
-
     input_data["Amount"] = st.number_input(
         "Transaction Amount",
         min_value=0.0,
-        value=float(
-            selected_transaction["Amount"]
-        ),
+        value=float(selected_transaction["Amount"]),
         format="%.6f",
         key="amount_input"
     )
@@ -580,21 +566,15 @@ with col2:
 # V1 - V14
 # ============================================================
 
-st.subheader(
-    "Transaction Features V1 - V14"
-)
+st.subheader("Transaction Features V1 - V14")
 
 cols = st.columns(3)
 
 for i, feature in enumerate(FEATURES[1:15]):
-
     with cols[i % 3]:
-
         input_data[feature] = st.number_input(
             feature,
-            value=float(
-                selected_transaction[feature]
-            ),
+            value=float(selected_transaction[feature]),
             format="%.6f",
             key=f"{feature}_input"
         )
@@ -604,21 +584,15 @@ for i, feature in enumerate(FEATURES[1:15]):
 # V15 - V28
 # ============================================================
 
-st.subheader(
-    "Transaction Features V15 - V28"
-)
+st.subheader("Transaction Features V15 - V28")
 
 cols = st.columns(3)
 
 for i, feature in enumerate(FEATURES[15:29]):
-
     with cols[i % 3]:
-
         input_data[feature] = st.number_input(
             feature,
-            value=float(
-                selected_transaction[feature]
-            ),
+            value=float(selected_transaction[feature]),
             format="%.6f",
             key=f"{feature}_input"
         )
@@ -628,10 +602,7 @@ for i, feature in enumerate(FEATURES[15:29]):
 # VIEW COMPLETE TRANSACTION
 # ============================================================
 
-with st.expander(
-    "📄 View Complete Transaction Data"
-):
-
+with st.expander("📄 View Complete Transaction Data"):
     transaction_view = pd.DataFrame(
         [selected_transaction[FEATURES].to_dict()]
     )
@@ -664,33 +635,28 @@ if st.button(
 
 
     # --------------------------------------------------------
-    # MODEL PROBABILITY
+    # GET MODEL PROBABILITIES
     # --------------------------------------------------------
 
-    probabilities = model.predict_proba(
-        transaction
-    )[0]
+    probabilities = model.predict_proba(transaction)[0]
 
-    classes = list(
-        model.classes_
-    )
+    classes = list(model.classes_)
 
+
+    # --------------------------------------------------------
+    # FRAUD PROBABILITY
+    # --------------------------------------------------------
 
     if 1 in classes:
-
         fraud_probability = float(
-            probabilities[
-                classes.index(1)
-            ]
+            probabilities[classes.index(1)]
         )
-
     else:
-
         fraud_probability = 0.0
 
 
     # --------------------------------------------------------
-    # PREDICTION USING THRESHOLD
+    # APPLY DECISION THRESHOLD
     # --------------------------------------------------------
 
     prediction = int(
@@ -702,54 +668,36 @@ if st.button(
     # DETECTION RESULT
     # ========================================================
 
-    st.subheader(
-        "🎯 Detection Result"
-    )
+    st.subheader("🎯 Detection Result")
 
     col1, col2, col3 = st.columns(3)
 
-
     with col1:
-
         st.metric(
             "Fraud Probability",
             f"{fraud_probability * 100:.2f}%"
         )
 
-
     with col2:
-
         st.metric(
             "Decision Threshold",
             f"{threshold * 100:.2f}%"
         )
 
-
     with col3:
-
         if prediction == 1:
-
-            st.error(
-                "🚨 Predicted: FRAUD"
-            )
-
+            st.error("🚨 Predicted: FRAUD")
         else:
-
-            st.success(
-                "✅ Predicted: NORMAL"
-            )
+            st.success("✅ Predicted: NORMAL")
 
 
-    # --------------------------------------------------------
+    # ========================================================
     # PROBABILITY BAR
-    # --------------------------------------------------------
+    # ========================================================
 
     st.progress(
         min(
-            max(
-                fraud_probability,
-                0.0
-            ),
+            max(fraud_probability, 0.0),
             1.0
         )
     )
@@ -762,9 +710,7 @@ if st.button(
     # ACTUAL VS PREDICTED
     # ========================================================
 
-    st.subheader(
-        "📊 Actual vs Predicted"
-    )
+    st.subheader("📊 Actual vs Predicted")
 
     col1, col2 = st.columns(2)
 
@@ -774,15 +720,11 @@ if st.button(
     # --------------------------------------------------------
 
     with col1:
-
         if actual_label == 1:
-
             st.error(
                 "Actual Label: 🔴 FRAUD (1)"
             )
-
         else:
-
             st.success(
                 "Actual Label: 🟢 NORMAL (0)"
             )
@@ -793,15 +735,11 @@ if st.button(
     # --------------------------------------------------------
 
     with col2:
-
         if prediction == 1:
-
             st.error(
                 "Predicted Label: 🔴 FRAUD (1)"
             )
-
         else:
-
             st.success(
                 "Predicted Label: 🟢 NORMAL (0)"
             )
@@ -812,15 +750,10 @@ if st.button(
     # ========================================================
 
     if actual_label == prediction:
-
         st.success(
             "✅ Model Prediction is CORRECT"
         )
-
     else:
-
         st.warning(
             "⚠️ Model Prediction is INCORRECT"
         )
-```
-
