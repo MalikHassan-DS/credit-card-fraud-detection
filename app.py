@@ -233,6 +233,10 @@
 
 
 
+
+
+
+
 import streamlit as st
 import pandas as pd
 import joblib
@@ -255,8 +259,6 @@ st.set_page_config(
 BASE_DIR = Path(__file__).resolve().parent
 MODEL_DIR = BASE_DIR
 
-DATASET_PATH = BASE_DIR / "creditcard.csv"
-
 # ============================================================
 # FEATURES
 # ============================================================
@@ -277,35 +279,30 @@ FEATURES = [
 @st.cache_resource
 def load_model():
 
-    model = joblib.load(
-        MODEL_DIR / "fraud_detection_random_forest.pkl"
-    )
+    model_path = MODEL_DIR / "fraud_detection_random_forest.pkl"
+    threshold_path = MODEL_DIR / "threshold.pkl"
 
-    threshold = joblib.load(
-        MODEL_DIR / "threshold.pkl"
-    )
+    if not model_path.exists():
+        st.error(
+            "❌ fraud_detection_random_forest.pkl was not found. "
+            "Make sure the model file is in the same folder as app.py."
+        )
+        st.stop()
+
+    if not threshold_path.exists():
+        st.error(
+            "❌ threshold.pkl was not found. "
+            "Make sure the threshold file is in the same folder as app.py."
+        )
+        st.stop()
+
+    model = joblib.load(model_path)
+    threshold = joblib.load(threshold_path)
 
     return model, threshold
 
 
 model, threshold = load_model()
-
-# ============================================================
-# LOAD DATASET
-# ============================================================
-
-@st.cache_data
-def load_dataset():
-
-    if not DATASET_PATH.exists():
-        return None
-
-    df = pd.read_csv(DATASET_PATH)
-
-    return df
-
-
-df = load_dataset()
 
 # ============================================================
 # HEADER
@@ -315,477 +312,228 @@ st.title("💳 Credit Card Fraud Detection System")
 
 st.markdown(
     """
-    This application uses a **Random Forest Machine Learning model**
-    to detect potentially fraudulent credit card transactions.
-    """
+This application uses a **Random Forest Machine Learning model**
+to detect potentially fraudulent credit card transactions.
+"""
 )
 
 st.divider()
 
 # ============================================================
-# CHECK DATASET
-# ============================================================
-
-if df is None:
-
-    st.error(
-        "❌ creditcard.csv was not found."
-    )
-
-    st.info(
-        "Please place creditcard.csv in the same folder as app.py."
-    )
-
-    st.stop()
-
-# ============================================================
-# DATASET VALIDATION
-# ============================================================
-
-required_columns = FEATURES + ["Class"]
-
-missing_columns = [
-    col for col in required_columns
-    if col not in df.columns
-]
-
-if missing_columns:
-
-    st.error(
-        "❌ Required columns are missing from the dataset:"
-    )
-
-    st.write(missing_columns)
-
-    st.stop()
-
-# ============================================================
-# DATASET INFORMATION
-# ============================================================
-
-st.success(
-    f"✅ Dataset loaded successfully — "
-    f"{len(df):,} transactions available."
-)
-
-# ============================================================
 # MODEL INFORMATION
 # ============================================================
 
-col1, col2, col3 = st.columns(3)
+col1, col2 = st.columns(2)
 
 with col1:
-
     st.metric(
         "Model",
         "Random Forest"
     )
 
 with col2:
-
     st.metric(
         "Decision Threshold",
         f"{threshold:.4f}"
     )
 
-with col3:
-
-    st.metric(
-        "Total Transactions",
-        f"{len(df):,}"
-    )
-
 st.divider()
 
 # ============================================================
-# SESSION STATE
+# TRANSACTION DETAILS
 # ============================================================
 
-if "selected_transaction" not in st.session_state:
-    st.session_state.selected_transaction = None
+st.subheader("💳 Transaction Details")
 
-if "actual_label" not in st.session_state:
-    st.session_state.actual_label = None
-
-if "selected_index" not in st.session_state:
-    st.session_state.selected_index = None
-
-# ============================================================
-# TRANSACTION SELECTOR
-# ============================================================
-
-st.subheader("🔎 Select Transaction")
-
-st.markdown(
-    "Select a transaction from the dataset to load its actual values."
+st.info(
+    "Enter the transaction values below and click "
+    "**Analyze Transaction** to get the fraud probability."
 )
-
-# ------------------------------------------------------------
-# Transaction ID selector
-# ------------------------------------------------------------
-
-transaction_index = st.selectbox(
-    "Transaction Number",
-    options=range(len(df)),
-    format_func=lambda x: f"Transaction #{x + 1}",
-    key="transaction_selector"
-)
-
-# ------------------------------------------------------------
-# Load selected transaction
-# ------------------------------------------------------------
-
-if st.button(
-    "📥 Load Transaction",
-    use_container_width=True
-):
-
-    selected_row = df.iloc[transaction_index]
-
-    st.session_state.selected_transaction = selected_row
-    st.session_state.actual_label = int(
-        selected_row["Class"]
-    )
-    st.session_state.selected_index = transaction_index
-
-    st.rerun()
-
-# ============================================================
-# INPUT SECTION
-# ============================================================
-
-st.divider()
-
-st.subheader("Transaction Details")
-
-# ============================================================
-# CURRENT TRANSACTION
-# ============================================================
-
-selected_transaction = st.session_state.selected_transaction
 
 input_data = {}
 
-# ------------------------------------------------------------
-# If dataset transaction is loaded
-# ------------------------------------------------------------
+# ============================================================
+# TIME AND AMOUNT
+# ============================================================
 
-if selected_transaction is not None:
+st.subheader("Transaction Information")
 
-    st.success(
-        f"✅ Actual transaction loaded from creditcard.csv "
-        f"(Transaction #{st.session_state.selected_index + 1})"
+col1, col2 = st.columns(2)
+
+with col1:
+    input_data["Time"] = st.number_input(
+        "Time",
+        min_value=0.0,
+        value=0.0,
+        format="%.6f"
     )
 
-    actual_label = int(
-        st.session_state.actual_label
+with col2:
+    input_data["Amount"] = st.number_input(
+        "Transaction Amount",
+        min_value=0.0,
+        value=0.0,
+        format="%.6f"
     )
 
-    if actual_label == 0:
+# ============================================================
+# V1 - V14
+# ============================================================
 
-        st.info(
-            "Actual Label: 🟢 NORMAL (0)"
+st.subheader("Transaction Features V1 - V14")
+
+cols = st.columns(3)
+
+for i, feature in enumerate(FEATURES[1:15]):
+
+    with cols[i % 3]:
+
+        input_data[feature] = st.number_input(
+            feature,
+            value=0.0,
+            format="%.6f",
+            key=f"{feature}_input"
         )
+
+# ============================================================
+# V15 - V28
+# ============================================================
+
+st.subheader("Transaction Features V15 - V28")
+
+cols = st.columns(3)
+
+for i, feature in enumerate(FEATURES[15:29]):
+
+    with cols[i % 3]:
+
+        input_data[feature] = st.number_input(
+            feature,
+            value=0.0,
+            format="%.6f",
+            key=f"{feature}_input"
+        )
+
+# ============================================================
+# PREDICTION
+# ============================================================
+
+st.divider()
+
+if st.button(
+    "🔍 Analyze Transaction",
+    use_container_width=True
+):
+
+    # --------------------------------------------------------
+    # CREATE TRANSACTION DATAFRAME
+    # --------------------------------------------------------
+
+    transaction = pd.DataFrame(
+        [input_data],
+        columns=FEATURES
+    )
+
+    # --------------------------------------------------------
+    # FRAUD PROBABILITY
+    # --------------------------------------------------------
+
+    probabilities = model.predict_proba(transaction)[0]
+
+    if hasattr(model, "classes_"):
+
+        classes = list(model.classes_)
+
+        if 1 in classes:
+            fraud_index = classes.index(1)
+            fraud_probability = float(
+                probabilities[fraud_index]
+            )
+        else:
+            fraud_probability = 0.0
 
     else:
+        fraud_probability = float(probabilities[1])
 
-        st.warning(
-            "Actual Label: 🔴 FRAUD (1)"
-        )
+    # --------------------------------------------------------
+    # APPLY DECISION THRESHOLD
+    # --------------------------------------------------------
+
+    prediction = int(
+        fraud_probability >= threshold
+    )
 
     # ========================================================
-    # TIME AND AMOUNT
+    # DETECTION RESULT
     # ========================================================
 
-    st.subheader("Transaction Information")
+    st.subheader("🎯 Detection Result")
 
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
 
     with col1:
-
-        input_data["Time"] = st.number_input(
-            "Time",
-            value=float(
-                selected_transaction["Time"]
-            ),
-            format="%.6f",
-            key="time_input"
+        st.metric(
+            "Fraud Probability",
+            f"{fraud_probability * 100:.2f}%"
         )
 
     with col2:
-
-        input_data["Amount"] = st.number_input(
-            "Transaction Amount",
-            min_value=0.0,
-            value=float(
-                selected_transaction["Amount"]
-            ),
-            format="%.6f",
-            key="amount_input"
+        st.metric(
+            "Decision Threshold",
+            f"{threshold * 100:.2f}%"
         )
 
-    # ========================================================
-    # TRANSACTION FEATURES
-    # ========================================================
+    with col3:
 
-    st.subheader("Transaction Features")
-
-    # --------------------------------------------------------
-    # V1 - V14
-    # --------------------------------------------------------
-
-    cols = st.columns(3)
-
-    for i, feature in enumerate(FEATURES[1:15]):
-
-        with cols[i % 3]:
-
-            input_data[feature] = st.number_input(
-                feature,
-                value=float(
-                    selected_transaction[feature]
-                ),
-                format="%.6f",
-                key=f"{feature}_input"
-            )
-
-    # --------------------------------------------------------
-    # V15 - V28
-    # --------------------------------------------------------
-
-    cols = st.columns(3)
-
-    for i, feature in enumerate(FEATURES[15:29]):
-
-        with cols[i % 3]:
-
-            input_data[feature] = st.number_input(
-                feature,
-                value=float(
-                    selected_transaction[feature]
-                ),
-                format="%.6f",
-                key=f"{feature}_input"
-            )
+        if prediction == 1:
+            st.error("🚨 Predicted: FRAUD")
+        else:
+            st.success("✅ Predicted: NORMAL")
 
     # ========================================================
-    # SHOW RAW TRANSACTION
+    # PROBABILITY BAR
     # ========================================================
 
-    with st.expander("📄 View Complete Transaction Data"):
-
-        transaction_preview = pd.DataFrame(
-            [selected_transaction[FEATURES].to_dict()]
+    st.progress(
+        min(
+            max(fraud_probability, 0.0),
+            1.0
         )
-
-        st.dataframe(
-            transaction_preview,
-            use_container_width=True
-        )
+    )
 
     # ========================================================
-    # PREDICTION
+    # FINAL EXPLANATION
     # ========================================================
 
     st.divider()
 
-    if st.button(
-        "🔍 Analyze Transaction",
-        use_container_width=True
-    ):
+    if prediction == 1:
 
-        # ----------------------------------------------------
-        # Create transaction DataFrame
-        # ----------------------------------------------------
-
-        transaction = pd.DataFrame(
-            [input_data],
-            columns=FEATURES
+        st.error(
+            f"🚨 Potential fraudulent transaction detected. "
+            f"The fraud probability is "
+            f"**{fraud_probability * 100:.2f}%**, which is "
+            f"greater than or equal to the decision threshold "
+            f"of **{threshold * 100:.2f}%**."
         )
 
-        # ----------------------------------------------------
-        # Fraud Probability
-        # ----------------------------------------------------
+    else:
 
-        probabilities = model.predict_proba(
-            transaction
-        )[0]
-
-        # ----------------------------------------------------
-        # Safely find probability for Class 1
-        # ----------------------------------------------------
-
-        if hasattr(model, "classes_"):
-
-            classes = list(
-                model.classes_
-            )
-
-            if 1 in classes:
-
-                fraud_index = classes.index(1)
-
-                fraud_probability = float(
-                    probabilities[fraud_index]
-                )
-
-            else:
-
-                fraud_probability = 0.0
-
-        else:
-
-            fraud_probability = float(
-                probabilities[1]
-            )
-
-        # ----------------------------------------------------
-        # Prediction using threshold
-        # ----------------------------------------------------
-
-        prediction = int(
-            fraud_probability >= threshold
+        st.success(
+            f"✅ Transaction classified as normal. "
+            f"The fraud probability is "
+            f"**{fraud_probability * 100:.2f}%**, which is "
+            f"below the decision threshold of "
+            f"**{threshold * 100:.2f}%**."
         )
 
-        actual_label = int(
-            st.session_state.actual_label
+    # ========================================================
+    # INPUT SUMMARY
+    # ========================================================
+
+    with st.expander("📄 View Transaction Values"):
+
+        st.dataframe(
+            transaction,
+            use_container_width=True
         )
-
-        # ====================================================
-        # DETECTION RESULT
-        # ====================================================
-
-        st.subheader("🎯 Detection Result")
-
-        col1, col2, col3 = st.columns(3)
-
-        with col1:
-
-            st.metric(
-                "Fraud Probability",
-                f"{fraud_probability * 100:.2f}%"
-            )
-
-        with col2:
-
-            st.metric(
-                "Decision Threshold",
-                f"{threshold * 100:.2f}%"
-            )
-
-        with col3:
-
-            if prediction == 1:
-
-                st.error(
-                    "🚨 Predicted: FRAUD"
-                )
-
-            else:
-
-                st.success(
-                    "✅ Predicted: NORMAL"
-                )
-
-        # ----------------------------------------------------
-        # Probability Progress Bar
-        # ----------------------------------------------------
-
-        st.progress(
-            min(
-                max(
-                    fraud_probability,
-                    0.0
-                ),
-                1.0
-            )
-        )
-
-        # ====================================================
-        # ACTUAL VS PREDICTED
-        # ====================================================
-
-        st.divider()
-
-        st.subheader("📊 Actual vs Predicted")
-
-        col1, col2 = st.columns(2)
-
-        with col1:
-
-            if actual_label == 1:
-
-                st.error(
-                    "Actual Label: 🔴 FRAUD (1)"
-                )
-
-            else:
-
-                st.success(
-                    "Actual Label: 🟢 NORMAL (0)"
-                )
-
-        with col2:
-
-            if prediction == 1:
-
-                st.error(
-                    "Predicted Label: 🔴 FRAUD (1)"
-                )
-
-            else:
-
-                st.success(
-                    "Predicted Label: 🟢 NORMAL (0)"
-                )
-
-        # ====================================================
-        # FINAL VERDICT
-        # ====================================================
-
-        st.divider()
-
-        if actual_label == prediction:
-
-            st.success(
-                "✅ Model Prediction is CORRECT"
-            )
-
-        else:
-
-            st.warning(
-                "⚠️ Model Prediction is INCORRECT"
-            )
-
-        # ====================================================
-        # EXPLANATION
-        # ====================================================
-
-        if prediction == 1:
-
-            st.warning(
-                f"The fraud probability "
-                f"({fraud_probability:.4f}) is greater than "
-                f"or equal to the decision threshold "
-                f"({threshold:.4f})."
-            )
-
-        else:
-
-            st.info(
-                f"The fraud probability "
-                f"({fraud_probability:.4f}) is below "
-                f"the decision threshold "
-                f"({threshold:.4f})."
-            )
-
-# ============================================================
-# NO TRANSACTION SELECTED
-# ============================================================
-
-else:
-
-    st.info(
-        "👆 Select a transaction above and click "
-        "**Load Transaction** to view its actual values."
-    )
