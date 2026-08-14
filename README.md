@@ -1,76 +1,79 @@
 #  Credit Card Fraud Detection
 
-A Machine Learning project for detecting potentially fraudulent credit card transactions using a Random Forest classifier and a Streamlit web application.
+A Machine Learning project for detecting potentially fraudulent credit card transactions using a **Random Forest classifier** and an interactive **Streamlit web application**.
 
 # Project Overview
 
 Credit card fraud detection is a highly imbalanced classification problem because fraudulent transactions represent only a very small proportion of all transactions.
 
-This project explores different machine learning approaches and selects a final Random Forest model based on precision, recall, F1-score, ROC-AUC, PR-AUC, and threshold analysis.
+This project explores multiple machine learning approaches, handles class imbalance, evaluates models using appropriate classification metrics, tunes the classification threshold, and deploys the final Random Forest model through a Streamlit application.
 
 # Objectives
 
- and prepare the transaction dataset
- Perform exploratory data analysis (EDA)
- Analyze class imbalance
- Train and compare multiple machine learning approaches
- Handle class imbalance using class weighting and SMOTE
- Evaluate models using appropriate classification metrics
- Tune the classification threshold
- Select and save the final model
- Build a Streamlit application for transaction prediction
+* Prepare and clean the transaction dataset
+* Perform Exploratory Data Analysis (EDA)
+* Analyze class imbalance
+* Train and compare multiple machine learning approaches
+* Handle class imbalance using class weighting and SMOTE
+* Evaluate models using appropriate classification metrics
+* Analyze ROC-AUC and PR-AUC
+* Tune the classification threshold
+* Select and save the final model
+* Build a Streamlit application for transaction prediction
 
 # Dataset
 
 The dataset contains:
 
- `Time` — time elapsed between transactions
- `V1` to `V28` — anonymized principal components
- `Amount` — transaction amount
- `Class` — target variable
+| Feature    | Description                       |
+| ---------- | --------------------------------- |
+| `Time`     | Time elapsed between transactions |
+| `V1`–`V28` | Anonymized principal components   |
+| `Amount`   | Transaction amount                |
+| `Class`    | Target variable                   |
 
-Target classes:
+### Target Classes
 
- `0` = Normal transaction
- `1` = Fraudulent transaction
+* `0` = Normal transaction
+* `1` = Fraudulent transaction
 
 # Dataset Cleaning
 
-Original dataset:
+# Original Dataset
 
- 284,807 transactions
- 31 columns
- 1,081 duplicate rows
+* **284,807 transactions**
+* **31 columns**
+* **1,081 duplicate rows**
 
-After duplicate removal:
+# After Duplicate Removal
 
- 283,726 transactions
- 31 columns
- 0 missing values
+* **283,726 transactions**
+* **31 columns**
+* **0 missing values**
 
-Class distribution after cleaning:
+# Class Distribution After Cleaning
 
- Normal: 283,253
- Fraud: 473
+* Normal: **283,253**
+* Fraud: **473**
 
-This shows a severe class imbalance.
+This demonstrates the severe class imbalance present in the dataset.
 
 # Exploratory Data Analysis
 
 The project includes analysis of:
 
- Class distribution
- Transaction amount
- Transaction time
- Correlation with the target
- Important features associated with fraud
+* Class distribution
+* Transaction amount
+* Transaction time
+* Correlation with the target
+* Important features associated with fraud
 
-The average transaction amount was:
+# Average Transaction Amount
 
 | Transaction Type | Average Amount |
-|---|---:|
-| Normal | 88.29 |
-| Fraud | 122.21 |
+| ---------------- | -------------: |
+| Normal           |          88.29 |
+| Fraud            |         122.21 |
 
 # Machine Learning Models
 
@@ -83,33 +86,33 @@ Several approaches were evaluated:
 
 # Model Comparison
 
-| Model | Accuracy | Precision | Recall | F1 Score |
-|---|---:|---:|---:|---:|
-| Logistic Regression | 99.91% | 84.62% | 57.89% | 68.75% |
-| Class-Weighted Logistic Regression | 97.53% | 5.64% | 87.37% | 10.59% |
-| SMOTE Logistic Regression | 97.37% | 5.30% | 87.37% | ~10% |
-| Random Forest | 99.95% | 86.52% | 81.05% | 83.70% |
+| Model                              |   Accuracy |  Precision |     Recall |   F1 Score |
+| ---------------------------------- | ---------: | ---------: | ---------: | ---------: |
+| Logistic Regression                |     99.91% |     84.62% |     57.89% |     68.75% |
+| Class-Weighted Logistic Regression |     97.53% |      5.64% |     87.37% |     10.59% |
+| SMOTE Logistic Regression          |     97.37% |      5.30% |     87.37% |       ~10% |
+| **Random Forest**                  | **99.95%** | **86.52%** | **81.05%** | **83.70%** |
 
 # Final Model
 
-The final selected model is:
+The final selected model is a **Random Forest Classifier**.
 
-**Random Forest Classifier**
+It was selected because it provided a strong balance between precision and recall for the minority fraud class.
 
-The model was selected because it provided a strong balance between precision and recall for the minority fraud class.
+# Final Model Performance
 
-# Final Performance
-
- Accuracy: **99.947%**
- Precision: **86.52%**
- Recall: **81.05%**
- F1 Score: **83.70%**
- ROC-AUC: **93.91%**
- PR-AUC: **80.12%**
+| Metric    |       Score |
+| --------- | ----------: |
+| Accuracy  | **99.947%** |
+| Precision |  **86.52%** |
+| Recall    |  **81.05%** |
+| F1 Score  |  **83.70%** |
+| ROC-AUC   |  **93.91%** |
+| PR-AUC    |  **80.12%** |
 
 # Threshold Tuning
 
-Instead of relying only on the default 0.50 probability threshold, multiple thresholds were evaluated.
+Instead of relying only on the default probability threshold of `0.50`, multiple thresholds were evaluated.
 
 The selected threshold was:
 
@@ -117,11 +120,11 @@ The selected threshold was:
 
 At this threshold:
 
- Precision: **86.52%**
- Recall: **81.05%**
- F1 Score: **83.70%**
+* Precision: **86.52%**
+* Recall: **81.05%**
+* F1 Score: **83.70%**
 
-This provides a better balance between detecting fraudulent transactions and limiting false positives.
+The threshold of `0.20` provided the best F1 score among the evaluated thresholds and offered a better balance between detecting fraudulent transactions and limiting false positives.
 
 # Feature Importance
 
@@ -140,17 +143,17 @@ The most important features identified by the Random Forest model included:
 
 # SMOTE
 
-SMOTE (Synthetic Minority Over-sampling Technique) was tested to address the severe class imbalance.
+**SMOTE (Synthetic Minority Over-sampling Technique)** was tested to address the severe class imbalance.
 
-Before SMOTE:
+# Before SMOTE
 
- Normal: 226,602
- Fraud: 378
+* Normal: **226,602**
+* Fraud: **378**
 
-After SMOTE:
+# After SMOTE
 
- Normal: 226,602
- Fraud: 226,602
+* Normal: **226,602**
+* Fraud: **226,602**
 
 SMOTE improved fraud recall but produced a large number of false positives in this experiment, so it was not selected as the final approach.
 
@@ -160,14 +163,16 @@ A Streamlit web application was developed to provide an interactive interface fo
 
 The application allows users to enter:
 
- Time
- V1–V28
- Transaction Amount
+* `Time`
+* `V1`–`V28`
+* Transaction `Amount`
 
-The application then calculates the fraud probability and classifies the transaction as either:
+The Random Forest model then calculates the **fraud probability** and applies the selected **0.20 decision threshold**.
 
- Normal Transaction
- Potential Fraudulent Transaction
+The application classifies the transaction as:
+
+*  Normal Transaction
+*  Potential Fraudulent Transaction
 
 # Project Structure
 
@@ -180,8 +185,65 @@ Machine_Learning_project/
 ├── requirements.txt
 ├── .gitignore
 │
-├── models/
-│   ├── fraud_detection_random_forest.pkl
-│   └── threshold.pkl
-│
-└── data/
+├── fraud_detection_random_forest.pkl
+└── threshold.pkl
+
+# Technologies Used
+
+* Python
+* Pandas
+* NumPy
+* Matplotlib
+* Seaborn
+* Scikit-learn
+* Imbalanced-learn
+* Joblib
+* Streamlit
+* Jupyter Notebook
+* GitHub
+
+# Running the Application Locally
+
+# 1. Clone the repository
+
+bash
+git clone https://github.com/MalikHassan-DS/credit-card-fraud-detection.git
+
+
+# 2. Navigate to the project directory
+
+bash
+cd credit-card-fraud-detection
+
+
+# 3. Install dependencies
+
+bash
+pip install -r requirements.txt
+
+
+# 4. Run the Streamlit application
+
+bash
+python -m streamlit run app.py
+
+The application will open in your browser.
+
+# Key Results
+
+The final Random Forest model achieved:
+
+* **99.947% accuracy**
+* **86.52% precision**
+* **81.05% recall**
+* **83.70% F1 score**
+* **93.91% ROC-AUC**
+* **80.12% PR-AUC**
+
+The project demonstrates an end-to-end machine learning workflow, from data cleaning and exploratory analysis to model development, evaluation, threshold optimization, model persistence, and deployment through Streamlit.
+
+##  Author
+
+**Malik Hassan**
+
+GitHub: **MalikHassan-DS**
